@@ -1,0 +1,21 @@
+[package]
+name = "esp32c3_night_light"
+version = "0.1.0"
+authors = ["Juraj Michálek <juraj.michalek@espressif.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+esp-hal-common = { version = "0.2.0",  features = ["esp32c3", "smartled"] }
+esp32c3-hal = { version = "0.2.0" }
+esp-alloc = { version = "0.1.0", features = ["oom-handler"] }
+esp-backtrace = { version = "0.2.0", features = ["esp32c3", "panic-handler", "print-uart"] }
+riscv-rt = { version = "0.9", optional = true }
+infrared = { version = "0.14.1", features = [ "embedded-hal" ] }
+embedded-hal = "0.2"
+esp-println = { version = "0.3.1", features = [ "esp32c3" ] }
+smart-leds        = "0.3.0"
+
+[features]
+default = ["rt"]
+rt = ["riscv-rt"]
