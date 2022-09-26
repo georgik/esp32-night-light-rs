@@ -4,7 +4,7 @@
 extern crate alloc;
 use esp32c3_hal::{clock::ClockControl, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc,
     gpio::{Gpio5, IO},
-    gpio_types::{Event, Input, Pin, PullDown, Floating},
+    gpio_types::{Event, Input, Pin, PullDown, PullUp, Floating},
     pulse_control::ClockSource,
     Delay,
     PulseControl,
@@ -15,10 +15,11 @@ use esp_backtrace as _;
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
 use infrared::{
-    protocol::{AppleNec, Nec},
+    protocol::{AppleNec, Nec, NecDebug},
     remotecontrol::{nec::*, rc5::*},
     remotecontrol::{Action, Button},
     Receiver,
+    cmd::AddressCommand
 };
 
 use smart_leds::{
@@ -45,8 +46,8 @@ fn init_heap() {
 
 
 type IrPin = Gpio5<Input<Floating>>;
-type IrReceiver = infrared::PeriodicPoll<AppleNec, IrPin, Button<Apple2009>>;
-const SAMPLERATE: u32 = 20_000;
+type IrReceiver = infrared::PeriodicPoll<NecDebug, IrPin>;
+const SAMPLERATE: u32 = 1_000_000;
 
 #[riscv_rt::entry]
 fn main() -> ! {
@@ -92,40 +93,67 @@ fn main() -> ! {
         sat: 255,
         val: 255,
     };
-    let mut data;
+    // let mut data;
 
     let mut irda_pin = io.pins.gpio5.into_floating_input();
-    let mut receiver:IrReceiver = infrared::PeriodicPoll::with_pin(SAMPLERATE, irda_pin);
+    // let mut receiver:IrReceiver = infrared::PeriodicPoll::with_pin(SAMPLERATE, irda_pin);
+
+ use infrared::{Receiver,
+     remotecontrol::rc5::CdPlayer, cmd::AddressCommand,
+    
+     protocol::rc5::Rc5Command,
+ };
+
+    const RESOLUTION: u32 = 1_000_000;
+    let mut receiver = Receiver::builder()
+         .nec()
+         .frequency(RESOLUTION)
+         .pin(irda_pin)
+         .remotecontrol(Apple2009)
+         .build();
+
     println!("Starting main loop");
     loop {
         for hue in 0..=255 {
-            color.hue = hue;
-            // Convert from the HSV color space (where we can easily transition from one
-            // color to the other) to the RGB color space that we can then send to the LED
-            data = [hsv2rgb(color);16];
-            // When sending to the LED, we do a gamma correction first (see smart_leds
-            // documentation for details) and then limit the brightness to 10 out of 255 so
-            // that the output it's not too bright.
-            led.write(brightness(gamma(data.iter().cloned()), 10))
-                .unwrap();
-            delay.delay_ms(20u8);
 
+            let dt = 0; // Time since last pin flip
 
-            let r = receiver.poll();
-            match r {
-                Ok(Some(cmd)) => {
-                    if let Some(button) = cmd.action() {
-                        match button {
-                            Action::Play_Pause => println!("Play was pressed!"),
-                            Action::Power => println!("Power on/off"),
-                            Action::Down => { delay.delay_ms(2000u32); }
-                            _ => println!("Button pressed: {:?}", button),
-                        };
-                    }
-                }
-                Ok(None) => { }
-                Err(err) => println!("Err: {:?}", err),
+            if let Ok(Some(button)) = receiver.event(dt) {
+                // Get the command associated with this button
+                let cmd = button.command();
+                println!(
+                    "Action: {:?} - (Address, Command) = ({}, {})",
+                    button.action(), cmd.address(), cmd.command()
+                );
             }
+                        // color.hue = hue;
+            // // Convert from the HSV color space (where we can easily transition from one
+            // // color to the other) to the RGB color space that we can then send to the LED
+            // data = [hsv2rgb(color);16];
+            // // When sending to the LED, we do a gamma correction first (see smart_leds
+            // // documentation for details) and then limit the brightness to 10 out of 255 so
+            // // that the output it's not too bright.
+            // led.write(brightness(gamma(data.iter().cloned()), 10))
+            //     .unwrap();
+            // delay.delay_ms(20u8);
+
+
+            // let r = receiver.poll();
+            // match r {
+            //     Ok(Some(cmd)) => {
+            //         // println!(cmd.cmd); {
+            //             println!("a");
+            //             // match button {
+            //             //     Action::Play_Pause => println!("Play was pressed!"),
+            //             //     Action::Power => println!("Power on/off"),
+            //             //     Action::Down => { delay.delay_ms(2000u32); }
+            //             //     _ => println!("Button pressed: {:?}", button),
+            //             // };
+            //         // }
+            //     }
+            //     Ok(None) => { }
+            //     Err(err) => println!("Err: {:?}", err),
+            // }
         }
     }
 }
