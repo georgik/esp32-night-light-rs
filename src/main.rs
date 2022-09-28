@@ -86,7 +86,8 @@ fn main() -> ! {
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
     // We use one of the RMT channels to instantiate a `SmartLedsAdapter` which can
     // be used directly with all `smart_led` implementations
-    let mut led = <smartLedAdapter!(16)>::new(pulse.channel0, io.pins.gpio8);
+    // let mut led = <smartLedAdapter!(16)>::new(pulse.channel0, io.pins.gpio8);
+    let mut led = <smartLedAdapter!(16)>::new(pulse.channel0, io.pins.gpio1);
 
     let mut pir_sensor = io.pins.gpio3.into_pull_up_input();
 
@@ -99,7 +100,8 @@ fn main() -> ! {
     };
 
     println!("Starting main loop");
-    let mut data = [hsv2rgb(color)];
+    let mut data = [hsv2rgb(color);16];
+    led.write(brightness(gamma(data.iter().cloned()), 0)).unwrap();
     loop {
         if pir_sensor.is_high().unwrap() {
             println!("- pir high - turning on the light");
