@@ -93,10 +93,11 @@ fn main() -> ! {
 
     let mut delay = Delay::new(&clocks);
 
+    // Warm white
     let mut color = Hsv {
-        hue: 0,
-        sat: 0,
-        val: 100,
+        hue: 44,
+        sat: 13,
+        val: 99,
     };
 
     println!("Starting main loop");
@@ -112,7 +113,7 @@ fn main() -> ! {
 
             println!("- light is on");
             loop {
-                delay.delay_ms(4000u16);
+                delay.delay_ms(5000u16);
                 if pir_sensor.is_low().unwrap() {
                     println!("- pir low - turning off the light");
                     break;
@@ -122,8 +123,13 @@ fn main() -> ! {
             }
 
             for led_brightness in (0..=255).rev() {
+                if pir_sensor.is_high().unwrap() {
+                    println!("- pir high - stopped turning off the light");
+                    led.write(brightness(gamma(data.iter().cloned()), 0)).unwrap();
+                    break;
+                }
                 led.write(brightness(gamma(data.iter().cloned()), led_brightness)).unwrap();
-                delay.delay_ms(20u8);
+                delay.delay_ms(50u8);
             }
             println!("- light is off");
         }
