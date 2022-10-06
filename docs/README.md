@@ -1,5 +1,12 @@
 # esp32c3_night_light
 
+Implementation of Night ling with PIR+LDR sensor.
+
+Light source is cicle of NeoPixel LEDs.
+
+![ESP32-C3 Night Light - Front view](img/esp32c3-night-light-front.jpg)
+![ESP32-C3 Night Light - Top view](img/esp32c3-night-light-top.jpg)
+
 ## Dev Containers
 This repository offers Dev Containers supports for:
 -  [Gitpod](https://gitpod.io/)
