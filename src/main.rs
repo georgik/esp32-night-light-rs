@@ -4,7 +4,7 @@
 extern crate alloc;
 
 use esp32c3_hal::{
-    clock::ClockControl,
+    clock::{ ClockControl, CpuClock },
     interrupt,
     pac::{self, Peripherals, TIMG0, TIMG1},
     prelude::*,
@@ -50,8 +50,8 @@ fn init_heap() {
 fn main() -> ! {
     let peripherals = Peripherals::take().unwrap();
     let mut system = peripherals.SYSTEM.split();
-    let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
-    // let clocks = ClockControl::configure(system.clock_control, c)  .freeze();
+    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock80MHz).freeze();
+    // let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
     // Disable the RTC and TIMG watchdog timers
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
